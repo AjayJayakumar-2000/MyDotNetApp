@@ -1,0 +1,45 @@
+# azure-pipelines.yml
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  buildConfiguration: 'Release'
+
+pool:
+  vmImage: 'windows-latest'    # or 'ubuntu-latest' if you prefer Linux
+
+steps:
+
+- task: UseDotNet@2
+  displayName: 'Use .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '7.0.x'
+    includePreviewVersions: false
+
+- script: dotnet restore
+  displayName: 'dotnet restore'
+
+- script: dotnet build --configuration $(buildConfiguration) --no-restore
+  displayName: 'dotnet build'
+
+- script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+  displayName: 'dotnet test'
+
+# publish artifact (optional)
+- script: dotnet publish MyApp/MyApp.csproj --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish
+  displayName: 'dotnet publish'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish artifact'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/publish'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
